@@ -1,4 +1,4 @@
-# ⚽ World Cup 2026 AI Match Predictor
+# World Cup 2026 AI Match Predictor
 
 A full-stack web app that uses Machine Learning to predict FIFA World Cup 2026 match outcomes.
 
