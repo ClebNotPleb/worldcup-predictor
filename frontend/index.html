@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚽ World Cup 2026 AI Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #00c853; --green2: #1de9b6; --dark: #070d0a;
+      --card: #0f1f17; --border: #1a3326; --text: #e8f5e9;
+      --muted: #6b9e7e; --red: #ff3d57; --gold: #ffd600;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--dark); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: radial-gradient(circle at 20% 20%, rgba(0,200,83,0.06) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(29,233,182,0.04) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 1; }
+    header { text-align: center; padding: 4rem 1rem 2.5rem; }
+    .badge {
+      display: inline-block; background: rgba(0,200,83,0.12); border: 1px solid var(--green);
+      color: var(--green); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em;
+      text-transform: uppercase; padding: 0.35rem 1rem; border-radius: 100px; margin-bottom: 1.2rem;
+    }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 10vw, 6rem);
+      line-height: 0.9; background: linear-gradient(135deg, #fff 30%, var(--green));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    header p { color: var(--muted); font-size: 1rem; margin-top: 1rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem; }
+    .matchup { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; }
+    .team-slot label { display: block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+    .team-slot select {
+      width: 100%; background: var(--dark); color: var(--text); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.85rem 1rem; font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem; appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b9e7e' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem;
+    }
+    .team-slot select:focus { outline: none; border-color: var(--green); }
+    .vs { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--muted); text-align: center; }
+    .btn {
+      display: block; width: 100%; margin-top: 1.5rem; padding: 1rem;
+      background: linear-gradient(135deg, var(--green), var(--green2)); color: #000;
+      border: none; border-radius: 12px; font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem; letter-spacing: 0.08em; cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    #result { display: none; }
+    #result.show { display: block; animation: fadeUp 0.4s ease; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .winner-banner { text-align: center; padding: 1.5rem 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .winner-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+    .winner-name { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--gold); }
+    .winner-name.draw { color: var(--muted); }
+    .prob-section h3 { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .prob-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; }
+    .prob-label { width: 140px; font-size: 0.85rem; font-weight: 500; flex-shrink: 0; }
+    .prob-bar-wrap { flex: 1; background: var(--dark); border-radius: 100px; height: 10px; overflow: hidden; }
+    .prob-bar { height: 100%; border-radius: 100px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .bar-home { background: linear-gradient(90deg, var(--green), var(--green2)); }
+    .bar-draw { background: var(--muted); }
+    .bar-away { background: linear-gradient(90deg, var(--red), #ff8a65); }
+    .prob-pct { width: 42px; text-align: right; font-size: 0.85rem; font-weight: 600; }
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+    .stat-item { background: var(--dark); border-radius: 12px; padding: 1rem; text-align: center; }
+    .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--green); }
+    .stat-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 0.2rem; }
+    .loading { text-align: center; padding: 2rem; color: var(--muted); display: none; }
+    .spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.75rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg { background: rgba(255,61,87,0.1); border: 1px solid var(--red); color: var(--red); border-radius: 12px; padding: 1rem 1.2rem; font-size: 0.9rem; display: none; margin-top: 1rem; }
+    footer { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 0.8rem; }
+    footer a { color: var(--green); text-decoration: none; }
+    @media (max-width: 560px) { .matchup { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">🤖 Powered by Machine Learning</div>
+    <h1>World Cup<br>2026 Predictor</h1>
+    <p>Select two teams — our AI model will predict the match outcome</p>
+  </header>
+
+  <div class="card">
+    <div class="matchup">
+      <div class="team-slot">
+        <label>Home Team</label>
+        <select id="homeTeam"></select>
+      </div>
+      <div class="vs">VS</div>
+      <div class="team-slot">
+        <label>Away Team</label>
+        <select id="awayTeam"></select>
+      </div>
+    </div>
+    <button class="btn" id="predictBtn" onclick="predict()">⚽ Predict Match</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Analyzing match data…</div>
+  </div>
+
+  <div class="card" id="result">
+    <div class="winner-banner">
+      <div class="winner-label">Predicted Outcome</div>
+      <div class="winner-name" id="winnerName">—</div>
+    </div>
+    <div class="prob-section">
+      <h3>Win Probabilities</h3>
+      <div class="prob-row">
+        <span class="prob-label" id="homeLabel">Home</span>
+        <div class="prob-bar-wrap"><div class="prob-bar bar-home" id="barHome" style="width:0%"></div></div>
+        <span class="prob-pct" id="pctHome">0%</span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-label">Draw</span>
+        <div class="prob-bar-wrap"><div class="prob-bar bar-draw" id="barDraw" style="width:0%"></div></div>
+        <span class="prob-pct" id="pctDraw">0%</span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-label" id="awayLabel">Away</span>
+        <div class="prob-bar-wrap"><div class="prob-bar bar-away" id="barAway" style="width:0%"></div></div>
+        <span class="prob-pct" id="pctAway">0%</span>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-item"><div class="stat-value" id="homeRank">—</div><div class="stat-label" id="homeRankLabel">Home FIFA Pts</div></div>
+      <div class="stat-item"><div class="stat-value" id="awayRank">—</div><div class="stat-label" id="awayRankLabel">Away FIFA Pts</div></div>
+      <div class="stat-item"><div class="stat-value" id="homeTitles">—</div><div class="stat-label" id="homeTitlesLabel">Home Titles 🏆</div></div>
+      <div class="stat-item"><div class="stat-value" id="awayTitles">—</div><div class="stat-label" id="awayTitlesLabel">Away Titles 🏆</div></div>
+    </div>
+  </div>
+</div>
+
+<footer>Built with Python · FastAPI · scikit-learn · <a href="https://github.com/" target="_blank">View on GitHub</a></footer>
+
+<script>
+  const API_BASE = "http://localhost:8000";
+
+  async function loadTeams() {
+    try {
+      const res = await fetch(`${API_BASE}/teams`);
+      const data = await res.json();
+      const homeSelect = document.getElementById("homeTeam");
+      const awaySelect = document.getElementById("awayTeam");
+      data.teams.forEach(team => {
+        homeSelect.add(new Option(team, team));
+        awaySelect.add(new Option(team, team));
+      });
+      homeSelect.value = "Brazil";
+      awaySelect.value = "Argentina";
+    } catch(e) {
+      showError("⚠️ Could not connect to the API. Make sure the backend is running on port 8000.");
+    }
+  }
+
+  async function predict() {
+    const home = document.getElementById("homeTeam").value;
+    const away = document.getElementById("awayTeam").value;
+    const btn = document.getElementById("predictBtn");
+    if (home === away) { showError("Please select two different teams."); return; }
+    hideError(); showLoading(true); hideResult(); btn.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ home_team: home, away_team: away }),
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Prediction failed."); }
+      const data = await res.json();
+      displayResult(data);
+    } catch(e) {
+      showError(e.message);
+    } finally {
+      showLoading(false); btn.disabled = false;
+    }
+  }
+
+  function displayResult(data) {
+    const probs = data.probabilities;
+    const homeWin = probs["Home Win"] || 0;
+    const draw = probs["Draw"] || 0;
+    const awayWin = probs["Away Win"] || 0;
+    const winnerEl = document.getElementById("winnerName");
+    if (data.predicted_winner === "Home Win") { winnerEl.textContent = `${data.home_team} Win`; winnerEl.className = "winner-name"; }
+    else if (data.predicted_winner === "Away Win") { winnerEl.textContent = `${data.away_team} Win`; winnerEl.className = "winner-name"; }
+    else { winnerEl.textContent = "Draw"; winnerEl.className = "winner-name draw"; }
+    document.getElementById("homeLabel").textContent = data.home_team;
+    document.getElementById("awayLabel").textContent = data.away_team;
+    setTimeout(() => { setBar("barHome","pctHome",homeWin); setBar("barDraw","pctDraw",draw); setBar("barAway","pctAway",awayWin); }, 50);
+    document.getElementById("homeRank").textContent = data.home_ranking.toLocaleString();
+    document.getElementById("awayRank").textContent = data.away_ranking.toLocaleString();
+    document.getElementById("homeTitles").textContent = data.home_titles;
+    document.getElementById("awayTitles").textContent = data.away_titles;
+    document.getElementById("homeRankLabel").textContent = `${data.home_team} FIFA Pts`;
+    document.getElementById("awayRankLabel").textContent = `${data.away_team} FIFA Pts`;
+    document.getElementById("homeTitlesLabel").textContent = `${data.home_team} 🏆`;
+    document.getElementById("awayTitlesLabel").textContent = `${data.away_team} 🏆`;
+    document.getElementById("result").classList.add("show");
+  }
+
+  function setBar(barId, pctId, value) {
+    document.getElementById(barId).style.width = `${value}%`;
+    document.getElementById(pctId).textContent = `${value}%`;
+  }
+  function showLoading(show) { document.getElementById("loading").style.display = show ? "block" : "none"; }
+  function hideResult() { document.getElementById("result").classList.remove("show"); }
+  function showError(msg) { const el = document.getElementById("errorMsg"); el.textContent = msg; el.style.display = "block"; }
+  function hideError() { document.getElementById("errorMsg").style.display = "none"; }
+
+  loadTeams();
+</script>
+</body>
+</html>
